@@ -3,10 +3,10 @@ body{
     width:100%;
     background: linear-gradient(291deg, rgb(101, 210, 230), rgb(17, 241, 212));
     background-size: 400% 400%;
-    animation: AnimationName 14s ease infinite;
+    animation: GradientAnimation 14s ease infinite;
 }
 
-@keyframes AnimationName {
+@keyframes GradientAnimation {
     0%{background-position:0% 50%}
     50%{background-position:100% 50%}
     100%{background-position:0% 50%}
