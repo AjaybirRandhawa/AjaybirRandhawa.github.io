@@ -1,29 +1,45 @@
 body{
     margin: 0px;
+    width:100%;
+    background: linear-gradient(291deg, rgb(101, 210, 230), rgb(17, 241, 212));
+    background-size: 400% 400%;
+    animation: AnimationName 14s ease infinite;
 }
 
+@keyframes AnimationName {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
 .container {
     display: grid;
     grid-template-columns: 1fr; /* stands for fractional units*/
 }
 /* Nav styles*/
 .navbar-wrapper {
+    width:100%;
     display:flex;
     justify-content: space-between;
-    padding: 30px;
+    padding-top:10px;
+    padding-bottom:5px;
 }
 .left-column{
-        display:flex;
+    display:flex;
 }
 .navbar-wrapper > .left-column > div{
     margin-right: 20px;
-    font-size: 0.9em;
-    text-transform: uppercase;
+    font-size: 1em;
+}
+.name{
+    color:#8a8a8a;
+    display: flex;
+    margin-right:30px;
 }
 .nav-link-wrapper {
-    height: 22px;
+    height: 25px;
     border-bottom: 1px solid transparent; 
     transition: border-bottom 0.5s;
+    margin-left:15px;
 }
 .nav-link-wrapper a{
     color: #8a8a8a;
