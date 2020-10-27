@@ -1,12 +1,11 @@
 body{
     margin: 0px;
     width:100%;
-    background: linear-gradient(291deg, rgb(101, 210, 230), rgb(17, 241, 212));
-    background-size: 400% 400%;
-    animation: GradientAnimation 14s ease infinite;
+    background: linear-gradient(291deg,rgb(99, 223, 228), rgb(99,223,228));
+    animation: AnimationName 14s ease infinite;
 }
 
-@keyframes GradientAnimation {
+@keyframes AnimationName {
     0%{background-position:0% 50%}
     50%{background-position:100% 50%}
     100%{background-position:0% 50%}
@@ -17,6 +16,7 @@ body{
 }
 /* Nav styles*/
 .navbar-wrapper {
+    margin-top: 10px;
     width:100%;
     display:flex;
     justify-content: space-between;
@@ -25,6 +25,7 @@ body{
 }
 .left-column{
     display:flex;
+    padding-left: 4%;
 }
 .navbar-wrapper > .left-column > div{
     margin-right: 20px;
@@ -46,16 +47,19 @@ body{
     text-decoration: none;
     transition: color 0.5s;
 }
+.nav-link-wrapper:hover {
+    border-bottom: 1px solid black;
+    text-decoration: none;
+}
+.nav-link-wrapper a:hover {
+    color: black;  
+    text-decoration: none;     
+}
 /* The reason we did two of these is the first deals with the line under the nav items and the other deals with the line of text. The
    line of text is given the variable a which we set its color as grey but to change upon hover. Pretty cool, I can also declare the 
    right column as .nav-link-wrapper b and do this with a differnet color, sadly it has no hyperlink attached so it'll lead to nowhere
    upon being clicked*/
-.nav-link-wrapper:hover {
-    border-bottom: 1px solid black;
-}
-.nav-link-wrapper a:hover {
-    color: black;       
-}
+
 /*Portfolio Styles*/
 .portfolio-items-wrapper{
     display: grid;
@@ -102,4 +106,27 @@ body{
 .img-darken{
     transition: 1s;
     filter: brightness(10%);
+}
+#who-am-I{
+    background-color:whitesmoke;
+    opacity:1;
+    text-align: center;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    padding:15px;
+}
+#who-am-I-text{
+    background-color:whitesmoke;
+    opacity:0.7;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding:15px;
+    text-align: justify;
+    font-size: large;
+}
+.rounded-img{
+    border-radius: 5px;
+}
+#Linkedin{
+    margin-left: 25px;
 }
