@@ -1,18 +1,57 @@
-body{
+.body{
     margin: 0px;
+    padding: 0px;
     width:100%;
-    background: linear-gradient(291deg,rgb(99, 223, 228), rgb(99,223,228));
-    animation: AnimationName 14s ease infinite;
+    height:100%;
+    background-color: black;
 }
-
-@keyframes AnimationName {
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
+.Welcome{
+    margin:10% auto 0;
+    color:#8a8a8a;
+    font-size: 45px;
+    text-align: center;
 }
-.container {
-    display: grid;
-    grid-template-columns: 1fr; /* stands for fractional units*/
+.text{
+    font-family: 'Courgette', cursive;
+}
+.wave{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20%;
+    background:url(./images/Purple-wave.png);
+    background-size: 200% 20vh;
+}
+.wave.wave1{
+    animation: animate 30s linear infinite;
+    z-index: -1000;
+    opacity: 1;
+    animation-delay: 0s;
+    bottom:0;
+}
+@keyframes animate{
+    0%{
+        background-position-x: 0%;
+    }
+    100%{
+        background-position-x: 100%;
+    }
+}
+.wave.wave2{
+    animation: animate2 15s linear infinite;
+    z-index: -1001;
+    opacity: 0.8;
+    animation-delay: -5s;
+    bottom:0;
+}
+@keyframes animate2{
+    0%{
+        background-position-x: 0%;
+    }
+    100%{
+        background-position-x: -100%;
+    }
 }
 /* Nav styles*/
 .navbar-wrapper {
@@ -27,16 +66,14 @@ body{
     display:flex;
     padding-left: 4%;
 }
-.navbar-wrapper > .left-column > div{
-    margin-right: 20px;
-    font-size: 1em;
-}
 .name{
     color:#8a8a8a;
     display: flex;
     margin-right:30px;
 }
 .nav-link-wrapper {
+    margin-right: 20px;
+    font-size: 1em;
     height: 25px;
     border-bottom: 1px solid transparent; 
     transition: border-bottom 0.5s;
@@ -47,66 +84,12 @@ body{
     text-decoration: none;
     transition: color 0.5s;
 }
-.nav-link-wrapper:hover {
-    border-bottom: 1px solid black;
-    text-decoration: none;
-}
-.nav-link-wrapper a:hover {
-    color: black;  
+.nav-link-wrapper :hover {
+    border-bottom: 1px solid palevioletred;
+    color: palevioletred;  
     text-decoration: none;     
 }
-/* The reason we did two of these is the first deals with the line under the nav items and the other deals with the line of text. The
-   line of text is given the variable a which we set its color as grey but to change upon hover. Pretty cool, I can also declare the 
-   right column as .nav-link-wrapper b and do this with a differnet color, sadly it has no hyperlink attached so it'll lead to nowhere
-   upon being clicked*/
 
-/*Portfolio Styles*/
-.portfolio-items-wrapper{
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-gap: 0em;
-}
-.portfolio-item-wrapper {
-    position: relative;
-}
-.portfolio-img-background{
-    height: 350px;
-    width: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-.img-text-wrapper{
-    position: absolute;
-    top: 0px;
-    display:flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    text-align: center;
-    padding-left: 100px;
-    padding-right: 100px;
-}
-.logo-wrapper img{
-    margin-bottom: 20px;
-    float: left;
-    height: 120px;
-    object-fit: center;
-}
-.img-text-wrapper .subtitle {
-    transition: 1s;
-    font-weight: 600;
-    color: transparent;
-}
-.img-text-wrapper:hover .subtitle {
-    font-weight: 600;
-    color: lightseagreen;
-}
-.img-darken{
-    transition: 1s;
-    filter: brightness(10%);
-}
 #who-am-I{
     background-color:whitesmoke;
     opacity:1;
