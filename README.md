@@ -3,4 +3,4 @@ This is the repository for my personal website, currently it is hosted on github
 Check it out [right here!](https://ajaybirrandhawa.github.io).
 
 ## Notes
-It is currently under work and is continously updated with new projects I've completed.
+It is currently under work and is continously updated with new information or updates.
