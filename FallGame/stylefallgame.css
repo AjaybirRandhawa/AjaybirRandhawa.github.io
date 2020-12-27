@@ -1,0 +1,119 @@
+/*Body and instructions styles*/
+.fallgame-body{
+    margin:0;
+    padding:0;
+    background-color:black;
+}
+.instructions{
+    color: rgb(149, 46, 153);
+}
+/* Nav styles*/ 
+.navbar-wrapper {
+    margin-top: 10px;
+    width:100%;
+    display:flex;
+    justify-content: space-between;
+    padding-top:10px;
+    padding-bottom:5px;
+    background-color: black;
+}
+.left-column{
+    display:flex;
+    padding-left: 4%;
+}
+.name{
+    color:#8a8a8a;
+    display: flex;
+    margin-right:30px;
+}
+.nav-link-wrapper {
+    margin-right: 20px;
+    font-size: 1em;
+    height: 25px;
+    border-bottom: 1px solid transparent; 
+    transition: border-bottom 0.5s;
+    margin-left:15px;
+}
+.nav-link-wrapper a{
+    color: #8a8a8a;
+    text-decoration: none;
+    transition: color 0.5s;
+}
+.nav-link-wrapper :hover {
+    border-bottom: 1px solid palevioletred;
+    color: palevioletred;  
+    text-decoration: none;     
+}
+/* Javascript items styling*/
+#game{
+    width:700px;
+    height:400px;
+    border: 1px solid white;
+    margin-top:100px;
+    margin-left:25%;
+}
+#character{
+    width:20px;
+    height:20px;
+    background-color: skyblue;
+    border-radius: 50%;
+    position:relative;
+    top:300px;
+    left:250px;
+    z-index:10;
+}
+.block{
+    width:700px;
+    height:20px;
+    background-color: rgb(149, 46, 153);
+    position: relative;
+    top:100px;
+    margin-top:-20px;
+}
+.hole{
+    width:60px;
+    height:20px;
+    background-color: black;
+    position:relative;
+    top:100px;
+    margin-top:-20px;
+}
+.wave{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20%;
+    background:url(../images/Purple-wave.png);
+    background-size: 200% 20vh;
+}
+.wave.wave1{
+    animation: animate 30s linear infinite;
+    z-index: -1000;
+    opacity: 1;
+    animation-delay: 0s;
+    bottom:0;
+}
+@keyframes animate{
+    0%{
+        background-position-x: 0%;
+    }
+    100%{
+        background-position-x: 100%;
+    }
+}
+.wave.wave2{
+    animation: animate2 15s linear infinite;
+    z-index: -1001;
+    opacity: 0.8;
+    animation-delay: -5s;
+    bottom:0;
+}
+@keyframes animate2{
+    0%{
+        background-position-x: 0%;
+    }
+    100%{
+        background-position-x: -100%;
+    }
+}
