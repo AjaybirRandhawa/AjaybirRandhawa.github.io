@@ -1,0 +1,18 @@
+::-webkit-scrollbar {
+    height: 7px;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: palevioletred; 
+    border-radius: 10px;
+	background-image: -webkit-linear-gradient(180deg, transparent, rgba(0, 0, 0, 0) 50%, transparent, transparent)
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background-image: -webkit-linear-gradient(left, rgb(192, 14, 112) 0%,rgb(189, 97, 169) 50%, rgb(176, 134, 202) 51%, rgb(158, 131, 200)  100%);
+}
+::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	background-image: -webkit-linear-gradient(left, rgb(158, 131, 200) 0%, 	rgb(176, 134, 202) 50%,rgb(189, 97, 169) 51%, rgb(192, 14, 112) 100%);
+}
