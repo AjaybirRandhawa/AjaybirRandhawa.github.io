@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css?family=Bad+Script');
+body{
+    width:100%;
+}
+::-webkit-scrollbar {
+    height: 7px;
+    z-index:5px;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: palevioletred; 
+    border-radius: 10px;
+	background-image: -webkit-linear-gradient(180deg, transparent, rgba(0, 0, 0, 0) 50%, transparent, transparent)
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background-image: -webkit-linear-gradient(left, rgb(192, 14, 112) 0%,rgb(189, 97, 169) 50%, rgb(176, 134, 202) 51%, rgb(158, 131, 200)  100%);
+}
+::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	background-image: -webkit-linear-gradient(left, rgb(158, 131, 200) 0%, 	rgb(176, 134, 202) 50%,rgb(189, 97, 169) 51%, rgb(192, 14, 112) 100%);
+}
+.box img{
+    width:100%;
+    height:50%;
+}
+.box{
+    position:relative;
+    width:100%;
+    height:400px;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    background-color:#060c21;
+    margin:40px;
+}
+.box::before{
+    content: '';
+    position:absolute;
+    top: -2px;
+    left:-2px;
+    right:-2px;
+    bottom:-2px;
+    background:#fff;
+    z-index: -1;
+}
+.box::after{
+    content: '';
+    position:absolute;
+    top: -2px;
+    left:-2px;
+    right:-2px;
+    bottom:-2px;
+    background:#fff;
+    z-index: -2;
+    filter: blur(20px);
+}
+.box:nth-child(odd)::before,
+.box:nth-child(odd)::after
+{
+    background: linear-gradient(235deg,  rgb(192, 14, 112),rgb(236, 150, 232), rgb(144, 238, 233));
+}
+.box .glass{
+    position:absolute;
+    top:0;
+    left:0;
+    width:50%;
+    height: 100%;
+    display:block;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events:none;
+}
+.box .content{
+    color: #fff;
+    padding:20px;
+}
+.content h2{
+    font-family: 'Courgette', cursive;
+    color:aquamarine;
+}
+.content p{
+    margin-top:10px;
+    font-family:'Courgette';
+    color:aqua;
+}
