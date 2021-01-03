@@ -30,7 +30,7 @@
     left: 0;
     width: 100%;
     height: 20%;
-    background:url(./images/Purple-wave.png);
+    background:url(../images/Purple-wave.png);
     background-size: 200% 20vh;
     z-index:-1;
 }
