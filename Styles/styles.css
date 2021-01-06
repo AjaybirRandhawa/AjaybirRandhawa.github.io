@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Bad+Script');
+@import url('https://fonts.googleapis.com/css2?family=Bilbo');
 .body{
     margin: 0px;
     padding: 0px;
@@ -13,8 +13,8 @@
     display:flex;
     justify-content: center;
     align-items:center;
-    font-family: 'Bad Script', cursive;
-    color:aquamarine;
+    font-family: 'Bilbo';
+    color:rgb(112, 174, 216);
 }
 
 .text{
@@ -26,7 +26,7 @@
 }
 .wave{
     position: absolute;
-    bottom: 0;
+    bottom: 0%;
     left: 0;
     width: 100%;
     height: 20%;
@@ -72,6 +72,7 @@
     justify-content: space-between;
     padding-top:10px;
     padding-bottom:5px;
+    font-family: 'sans-serif';
 }
 .left-column{
     display:flex;
@@ -126,7 +127,7 @@
     position:relative;
     display:inline-block;
     padding:15px 30px;
-    color: palevioletred;
+    color: rgb(93, 92, 160);
     text-transform: uppercase;
     letter-spacing: 4px;
     text-decoration: none;
@@ -137,7 +138,7 @@
 .Buttons:hover{
     color: palevioletred;
     background:rgb(40, 99, 109);
-    box-shadow: 0 0 10px palevioletred, 0 0 40px palevioletred, 0 0 80px palevioletred;
+    box-shadow: 0 0 10px rgb(112, 174, 216), 0 0 40px rgb(112, 174, 216), 0 0 80px rgb(112, 174, 216);
     transition-delay: 0.2s;
 }
 .Buttons span{
@@ -149,7 +150,7 @@
     left:-100%;
     width:100%;
     height:2px;
-    background:linear-gradient(90deg, transparent, palevioletred);
+    background:linear-gradient(90deg, transparent, rgb(112, 174, 216));
     animation: animate-Button1 1s linear infinite;
 }
 @keyframes animate-Button1{
@@ -165,7 +166,7 @@
     right:0;
     width:2px;
     height:100%;
-    background:linear-gradient(180deg, transparent, palevioletred);
+    background:linear-gradient(180deg, transparent, rgb(112, 174, 216));
     animation: animate-Button2 1s linear infinite;
     animation-delay: 0.25s;
 }
@@ -182,7 +183,7 @@
     right:-100%;
     width:100%;
     height:2px;
-    background:linear-gradient(270deg, transparent, palevioletred);
+    background:linear-gradient(270deg, transparent, rgb(112, 174, 216));
     animation: animate-Button3 1s linear infinite;
     animation-delay: 0.5s;
 }
@@ -199,7 +200,7 @@
     left:0;
     width:2px;
     height:100%;
-    background:linear-gradient(360deg, transparent, palevioletred);
+    background:linear-gradient(360deg, transparent, rgb(112, 174, 216));
     animation: animate-Button4 1s linear infinite;
     animation-delay:0.75s;
 }
