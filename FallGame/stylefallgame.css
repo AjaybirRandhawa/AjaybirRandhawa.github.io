@@ -63,7 +63,7 @@
     z-index:10;
 }
 .block{
-    width:700px;
+    width:698px;
     height:20px;
     background-color: rgb(149, 46, 153);
     position: relative;
@@ -89,7 +89,7 @@
 }
 .wave.wave1{
     animation: animate 30s linear infinite;
-    z-index: -1000;
+    z-index: -10;
     opacity: 1;
     animation-delay: 0s;
     bottom:0;
@@ -104,7 +104,7 @@
 }
 .wave.wave2{
     animation: animate2 15s linear infinite;
-    z-index: -1001;
+    z-index: -11;
     opacity: 0.8;
     animation-delay: -5s;
     bottom:0;
