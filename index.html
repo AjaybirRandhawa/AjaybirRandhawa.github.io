@@ -36,7 +36,7 @@
             </div>
         </div>
     </div>
-    <h1 class="Welcome" id="h1">
+    <h1 class="Welcome flex-container" id="h1">
         <span>W</span>
         <span>e</span>
         <span>l</span>
@@ -61,3 +61,9 @@
     <div class="wave"></div>
 </body>
 </html>
+<script>
+    var child = document.getElementById("h1").children;
+    for( i=0; i < child.length; i++){
+        child[i].style.animationDelay = i*0.25+"s";
+    } 
+</script>
