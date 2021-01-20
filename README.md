@@ -6,3 +6,4 @@ Check it out [right here!](https://ajaybirrandhawa.github.io).
 It contains interactive features with projects I've completed over the past. Hope you enjoy!
 ## Notes
 It is currently under work and is continously updated with new information or updates.
+Uses Typed.js, all credit for the script goes to creator of Typed.JS.
