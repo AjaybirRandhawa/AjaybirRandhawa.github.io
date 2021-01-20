@@ -76,23 +76,21 @@
 }
 .left-column{
     display:flex;
-    padding-left: 4%;
 }
 .name{
-    color:#8a8a8a;
+    color:black;
     display: flex;
-    margin-right:30px;
 }
 .nav-link-wrapper {
     margin-right: 20px;
-    font-size: 1em;
+    font-size: 1.1em;
     height: 25px;
     border-bottom: 1px solid transparent; 
     transition: border-bottom 0.5s;
     margin-left:15px;
 }
 .nav-link-wrapper a{
-    color: #8a8a8a;
+    color: black;
     text-decoration: none;
     transition: color 0.5s;
 }
