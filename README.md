@@ -1,5 +1,4 @@
 # Overview
-This is the repository for my personal website, currently it is hosted on github but might be changed later. Please do not use any aspects of this without permission.
 
 Welcome to my personal portfolio website!
 
