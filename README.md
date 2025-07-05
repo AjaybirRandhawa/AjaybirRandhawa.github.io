@@ -10,3 +10,4 @@ I hope you find this website helpful in learning more about me and my profession
 ## Notes
 It is currently under work and is continously updated with new information or updates.
 Uses Typed.js, all credit for the script goes to creator of Typed.JS.
+ 
