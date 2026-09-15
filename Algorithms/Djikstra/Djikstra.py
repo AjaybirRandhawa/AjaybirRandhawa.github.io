@@ -36,7 +36,6 @@ BRUSH_KEYS = {
 LEGEND_ORDER = [("1", "open"), ("2", "grass"), ("3", "mud"),
                 ("4", "water"), ("5", "wall")]
 
-# ----------------------------------------------------------------- colours
 GREY     = (70, 70, 74)
 FRONTIER = (196, 62, 62)
 CLOSED   = (96, 66, 148)
@@ -351,8 +350,6 @@ def draw(win, grid, start, end, brush, search):
     draw_hud(win, brush, search, start, end)
     pygame.display.update()
 
-
-# ------------------------------------------------------------------- input
 def cell_at(pos):
     mx, my = pos
     if not (0 <= mx < GRID_PX and 0 <= my < GRID_PX):
