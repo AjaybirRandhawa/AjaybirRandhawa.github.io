@@ -7,8 +7,8 @@ import pygame
 CELL    = 20
 ROWS    = 30
 GRID_PX = CELL * ROWS
-# enough for legend + buttons + two text lines
-HUD_PX  = 98
+# two rows of buttons plus two lines of text
+HUD_PX  = 112
 WIDTH   = GRID_PX
 HEIGHT  = GRID_PX + HUD_PX
 
@@ -31,18 +31,13 @@ BRUSH_KEYS = {
     pygame.K_5: "wall",
 }
 
-# separate from TERRAIN because dict order is insertion order and I want the
-# legend sorted by cost, not by whatever order I happened to type them in
-LEGEND_ORDER = [("1", "open"), ("2", "grass"), ("3", "mud"),
-                ("4", "water"), ("5", "wall")]
-
 GREY     = (70, 70, 74)
 FRONTIER = (196, 62, 62)
 CLOSED   = (96, 66, 148)
 PATH     = (64, 224, 208)
 START_C  = (255, 165, 0)
 END_C    = (0, 230, 90)
-CURRENT  = (255, 235, 90) 
+CURRENT  = (255, 235, 90)
 HUD_BG   = (16, 16, 18)
 TEXT     = (222, 222, 226)
 DIM      = (120, 120, 126)
@@ -56,20 +51,54 @@ WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dijkstra Visualiser")
 CLOCK = pygame.time.Clock()
 
-FONT = pygame.font.Font(None, 19)
+FONT  = pygame.font.Font(None, 19)
+SMALL = pygame.font.Font(None, 17) 
 
-# Button rects, worked out by hand until they stopped overlapping.
-# x positions are cumulative: 8, 8+92+6, etc.
-BTN_Y, BTN_H = GRID_PX + 26, 28
+BRUSH_Y, BRUSH_H = GRID_PX + 6,  24
+ACT_Y,   ACT_H   = GRID_PX + 36, 28
+SWATCH = 11
 
-def _btn(x, w):
-    return pygame.Rect(x, BTN_Y, w, BTN_H)
+BRUSH_ORDER = ["open", "grass", "mud", "water", "wall", "start", "end"]
 
-BUTTONS = {
-    "step":   _btn(8,    92),
-    "step10": _btn(106,  96),
-    "run":    _btn(208, 108),
-    "clear":  _btn(324,  92),
+BRUSH_LABELS = {}
+for _name, (_cost, _col) in TERRAIN.items():
+    BRUSH_LABELS[_name] = _name if _cost == INF else f"{_name} {_cost}"
+BRUSH_LABELS["start"] = "start"
+BRUSH_LABELS["end"]   = "end"
+
+BRUSH_SWATCH = {name: col for name, (_c, col) in TERRAIN.items()}
+BRUSH_SWATCH["start"] = START_C
+BRUSH_SWATCH["end"]   = END_C
+
+
+def _layout_brushes(y, h):
+    """
+    Measure each label and lay the row out left to right.
+    """
+    rects = {}
+    for pad, gap in ((9, 5), (7, 4), (5, 3), (3, 2)):
+        rects, x = {}, 8
+        for name in BRUSH_ORDER:
+            text_w = SMALL.size(BRUSH_LABELS[name])[0]
+            w = pad + SWATCH + 5 + text_w + pad
+            rects[name] = pygame.Rect(x, y, w, h)
+            x += w + gap
+        if x <= WIDTH - 4:
+            break
+    return rects
+
+
+BRUSH_BUTTONS = _layout_brushes(BRUSH_Y, BRUSH_H)
+
+
+def _act(x, w):
+    return pygame.Rect(x, ACT_Y, w, ACT_H)
+
+ACTION_BUTTONS = {
+    "step":   _act(8,    92),
+    "step10": _act(106,  96),
+    "run":    _act(208, 108),
+    "clear":  _act(324,  92),
 }
 
 
@@ -102,7 +131,7 @@ class Node:
         return self.terrain == "wall"
 
     def reset_search(self):
-        self.state = None  
+        self.state = None
         self.dist = INF
         self.prev = None
         self.finalised = False
@@ -114,7 +143,6 @@ class Node:
             nr, nc = r + dr, c + dc
             if 0 <= nr < ROWS and 0 <= nc < ROWS and not grid[nr][nc].is_wall:
                 self.adjacent.append(grid[nr][nc])
-
 
     def draw(self, win, start, end, current):
         # terrain underneath, search state as a smaller square on top, so you
@@ -235,7 +263,7 @@ class Search:
             if nb.finalised:
                 continue
             alt = node.dist + nb.cost
-            if alt < nb.dist: 
+            if alt < nb.dist:
                 nb.dist = alt
                 nb.prev = node
                 nb.state = "frontier"
@@ -266,25 +294,23 @@ def draw_grid_lines(win):
         pygame.draw.line(win, GREY, (p, 0), (p, GRID_PX))
 
 
-def draw_legend(win, brush, y):
-    x = 8
-    for key, name in LEGEND_ORDER:
-        cost, colour = TERRAIN[name]
-        swatch = pygame.Rect(x, y + 2, 12, 12)
-        pygame.draw.rect(win, colour, swatch)
-        pygame.draw.rect(win, BTN_EDGE, swatch, 1)
+def draw_brush_button(win, name, rect, selected, mouse):
+    if selected or rect.collidepoint(mouse):
+        bg = BTN_HOV
+    else:
+        bg = BTN_BG
 
-        if brush == name:
-            pygame.draw.rect(win, CURRENT, swatch.inflate(4, 4), 1)
+    pygame.draw.rect(win, bg, rect)
+    pygame.draw.rect(win, CURRENT if selected else BTN_EDGE,
+                     rect, 2 if selected else 1)
 
-        label = f"{key} {name}" if cost == INF else f"{key} {name}:{cost}"
-        surf = FONT.render(label, True, TEXT)
-        win.blit(surf, (x + 17, y))
-        x += 17 + surf.get_width() + 12
+    swatch = pygame.Rect(0, 0, SWATCH, SWATCH)
+    swatch.midleft = (rect.x + 7, rect.centery)
+    pygame.draw.rect(win, BRUSH_SWATCH[name], swatch)
+    pygame.draw.rect(win, BTN_EDGE, swatch, 1)
 
-    tag = {"start": "START", "end": "END"}.get(brush)
-    if tag:
-        win.blit(FONT.render(f"brush: {tag}", True, CURRENT), (x, y))
+    surf = SMALL.render(BRUSH_LABELS[name], True, TEXT)
+    win.blit(surf, surf.get_rect(midleft=(swatch.right + 5, rect.centery)))
 
 
 def draw_button(win, rect, label, enabled, mouse):
@@ -305,12 +331,12 @@ def draw_button(win, rect, label, enabled, mouse):
 def button_specs(search, start, end):
     has = search is not None
     return {
-        "step":   (BUTTONS["step"],   "Step >",   has and search.can_step()),
-        "step10": (BUTTONS["step10"], "Step x10", has and search.can_step()),
-        "run":    (BUTTONS["run"],
+        "step":   (ACTION_BUTTONS["step"],   "Step >",   has and search.can_step()),
+        "step10": (ACTION_BUTTONS["step10"], "Step x10", has and search.can_step()),
+        "run":    (ACTION_BUTTONS["run"],
                    "Reset search" if has else "Start",
                    has or bool(start and end)),
-        "clear":  (BUTTONS["clear"],  "Clear",    True),
+        "clear":  (ACTION_BUTTONS["clear"],  "Clear",    True),
     }
 
 
@@ -319,23 +345,30 @@ def draw_hud(win, brush, search, start, end):
     pygame.draw.rect(win, HUD_BG, (0, y0, WIDTH, HUD_PX))
     pygame.draw.line(win, BTN_EDGE, (0, y0), (WIDTH, y0))
 
-    draw_legend(win, brush, y0 + 5)
-
     mouse = pygame.mouse.get_pos()
+
+    for name, rect in BRUSH_BUTTONS.items():
+        draw_brush_button(win, name, rect, brush == name, mouse)
+
     for rect, label, enabled in button_specs(search, start, end).values():
         draw_button(win, rect, label, enabled, mouse)
 
     if search is None:
-        stat = "no search - place START (S) and END (E), then Start"
-        note = "S start  E end  LMB paint  RMB erase  SPACE step  C clear"
+        if start is None:
+            stat = "pick the start brush, then click a cell"
+        elif end is None:
+            stat = "pick the end brush, then click a cell"
+        else:
+            stat = "ready - press Start or SPACE"
+        note = "keys: 1-5 terrain   S/E start,end   SPACE step   C clear"
     else:
         stat = (f"step {search.step_no}   phase {search.phase}   "
                 f"queue {len(search.pq)}   finalised {search.expanded}   "
                 f"cost {search.path_cost}")
         note = search.note
 
-    win.blit(FONT.render(stat, True, TEXT), (8, y0 + 60))
-    win.blit(FONT.render(note, True, DIM), (8, y0 + 78))
+    win.blit(FONT.render(stat, True, TEXT), (8, y0 + 72))
+    win.blit(FONT.render(note, True, DIM),  (8, y0 + 90))
 
 
 def draw(win, grid, start, end, brush, search):
@@ -350,6 +383,8 @@ def draw(win, grid, start, end, brush, search):
     draw_hud(win, brush, search, start, end)
     pygame.display.update()
 
+
+# ------------------------------------------------------------------- input
 def cell_at(pos):
     mx, my = pos
     if not (0 <= mx < GRID_PX and 0 <= my < GRID_PX):
@@ -361,7 +396,7 @@ async def main():
     grid = make_grid()
     start = end = None
     search = None
-    brush = "wall"
+    brush = "start" 
     run = True
 
     while run:
@@ -399,26 +434,35 @@ async def main():
                 run = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                for key, (rect, _label, enabled) in button_specs(search, start, end).items():
-                    if not (enabled and rect.collidepoint(event.pos)):
-                        continue
+                hit_brush = False
+                for name, rect in BRUSH_BUTTONS.items():
+                    if rect.collidepoint(event.pos):
+                        brush = name
+                        hit_brush = True
+                        break
 
-                    if key == "step":
-                        search.step()
-                    elif key == "step10":
-                        for _ in range(10):
-                            if not search.step():
-                                break
-                    elif key == "run":
-                        if search is None:
-                            search = Search(grid, start, end)
-                        else:
-                            search = None
-                            clear_search_state(grid)
-                    elif key == "clear":
-                        grid = make_grid()
-                        start = end = search = None
-                    break 
+                if not hit_brush:
+                    for key, (rect, _label, enabled) in button_specs(search, start, end).items():
+                        if not (enabled and rect.collidepoint(event.pos)):
+                            continue
+
+                        if key == "step":
+                            search.step()
+                        elif key == "step10":
+                            for _ in range(10):
+                                if not search.step():
+                                    break
+                        elif key == "run":
+                            if search is None:
+                                search = Search(grid, start, end)
+                            else:
+                                search = None
+                                clear_search_state(grid)
+                        elif key == "clear":
+                            grid = make_grid()
+                            start = end = search = None
+                            brush = "start"
+                        break 
 
             elif event.type == pygame.KEYDOWN:
                 if event.key in BRUSH_KEYS:
@@ -430,6 +474,7 @@ async def main():
                 elif event.key == pygame.K_c:
                     grid = make_grid()
                     start = end = search = None
+                    brush = "start"
                 elif event.key in (pygame.K_SPACE, pygame.K_RIGHT):
                     if search is None:
                         if start and end:
