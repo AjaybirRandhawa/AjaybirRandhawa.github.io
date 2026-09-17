@@ -106,7 +106,7 @@
                 
                 await pyodide.runPythonAsync(pySource);
             } catch (err) {
-                status.innerText = "❌ Error loading: " + err.message;
+                status.innerText = "Error loading: " + err.message;
                 console.error(err);
             }
         }
