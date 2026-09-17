@@ -147,12 +147,12 @@
             enableTouchSupport(canvas);
 
             try {
-                status.innerText = "⏳ Initializing Python Engine...";
+                status.innerText = "Initializing Python Engine...";
                 const pyodide = await loadPyodide();
 
                 pyodide.canvas.setCanvas2D(canvas);
 
-                status.innerText = "⏳ Loading Pygame-CE (WebAssembly)...";
+                status.innerText = "Loading Pygame-CE (WebAssembly)...";
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
                 await micropip.install("pygame-ce");
