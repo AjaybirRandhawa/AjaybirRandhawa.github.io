@@ -6,11 +6,9 @@
     <title>Dijkstra Visualiser</title>
     <link rel="stylesheet" href="../../Styles/styles.css">
 
-    <!-- Pyodide 0.25.1 -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 
     <style>
-        /* Responsive container */
         .visualiser-wrapper {
             display: flex;
             flex-direction: column;
@@ -31,8 +29,6 @@
             font-weight: bold;
             text-align: center;
         }
-
-        /* Responsive Canvas: Scales cleanly down to any mobile screen size */
         #canvas {
             width: 100% !important;
             max-width: 600px !important;
@@ -43,10 +39,9 @@
             outline: none;
             background-color: #101012;
             display: block;
-            touch-action: none; /* Prevents unwanted page scrolling when drawing on touch screens */
+            touch-action: none;
         }
 
-        /* Ensure text containers don't overflow mobile screens */
         .container {
             max-width: 100%;
             box-sizing: border-box;
@@ -78,21 +73,18 @@
             </div>
         </div>
     </div>
-
     <div class="container">
         <div class="row">
             <div class="instructions" style="color: rgb(149, 46, 153);">
                 <h2>Instructions:</h2>
                 <ul>
-                    <li>Click or tap anywhere on the grid; select Start / End brushes or use buttons at the bottom.</li>
-                    <li>Place barriers by dragging across the grid; right-click (or long press) to erase.</li>
-                    <li>Press <kbd>Space</kbd> or tap <b>Start</b> to begin, and tap <b>Clear</b> to reset.</li>
+                    <li>Tap / Click anywhere on the grid; choose brushes or buttons at the bottom.</li>
+                    <li>Drag to paint barriers/terrain; right-click (or long press) to erase.</li>
+                    <li>Tap <b>Start</b> or press <kbd>Space</kbd> to run; tap <b>Clear</b> to reset.</li>
                 </ul>
             </div>
         </div>
     </div>
-
-    <!-- Responsive Visualiser Container -->
     <div class="visualiser-wrapper">
         <div id="loading-status">⏳ Initializing Python Engine...</div>
         <canvas id="canvas" width="600" height="712" tabindex="-1" oncontextmenu="event.preventDefault();"></canvas>
@@ -103,31 +95,81 @@
     <div class="wave"></div>
 
     <script>
+        const PYGAME_CE_WHEEL = "https://files.pythonhosted.org/packages/49/a0/0b8e8f81e3a62657e056aa1332fe09d5ebf5d25287f382215c0e7fe75ce1/pygame_ce-2.5.2-cp311-cp311-emscripten_3_1_46_wasm32.whl";
+
+        function enableTouchSupport(canvas) {
+            function forwardTouchEvent(type, touch, button) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const clientX = (touch.clientX - rect.left) * scaleX + rect.left;
+                const clientY = (touch.clientY - rect.top) * scaleY + rect.top;
+
+                const event = new MouseEvent(type, {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: clientX,
+                    clientY: clientY,
+                    button: button || 0,
+                    buttons: button === 2 ? 2 : 1
+                });
+                canvas.dispatchEvent(event);
+            }
+
+            canvas.addEventListener("touchstart", (e) => {
+                if (e.touches.length > 0) {
+                    forwardTouchEvent("mousedown", e.touches[0], e.touches.length > 1 ? 2 : 0);
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            canvas.addEventListener("touchmove", (e) => {
+                if (e.touches.length > 0) {
+                    forwardTouchEvent("mousemove", e.touches[0], 0);
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            canvas.addEventListener("touchend", (e) => {
+                const touch = e.changedTouches[0] || e.touches[0];
+                if (touch) {
+                    forwardTouchEvent("mouseup", touch, 0);
+                }
+                e.preventDefault();
+            }, { passive: false });
+        }
+
         async function main() {
             const status = document.getElementById("loading-status");
             const canvas = document.getElementById("canvas");
 
+            enableTouchSupport(canvas);
             try {
                 status.innerText = "Initializing Python Engine...";
                 const pyodide = await loadPyodide();
 
                 pyodide.canvas.setCanvas2D(canvas);
-
-                status.innerText = "Loading Pygame-CE...";
+                status.innerText = "Downloading Pygame-CE...";
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
-                await micropip.install("pygame-ce");
-
+                
+                try {
+                    await micropip.install(PYGAME_CE_WHEEL);
+                } catch (wheelErr) {
+                    await micropip.install("pygame-ce");
+                }
                 status.innerText = "Loading Dijkstra script...";
                 let response = await fetch("./Djikstra.py");
                 if (!response.ok) {
                     response = await fetch("./djikstra.py");
                 }
                 if (!response.ok) {
-                    throw new Error("Could not fetch Dijkstra python file.");
+                    throw new Error("Could not load Dijkstra script.");
                 }
                 const pySource = await response.text();
 
+                // 4. Start visualizer
                 status.style.display = "none";
                 canvas.focus();
 
@@ -136,7 +178,7 @@ ${pySource}
 await main()
                 `);
             } catch (err) {
-                status.innerText = "Error Message: " + err.message;
+                status.innerText = "Error: " + err.message;
                 console.error(err);
             }
         }
