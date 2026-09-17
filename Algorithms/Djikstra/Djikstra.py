@@ -486,5 +486,8 @@ async def main():
 
     pygame.quit()
 
-
-asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        asyncio.ensure_future(main())
