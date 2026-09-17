@@ -1,6 +1,5 @@
 import asyncio
 import heapq
-import sys
 from itertools import count
 
 import pygame
@@ -8,12 +7,14 @@ import pygame
 CELL    = 20
 ROWS    = 30
 GRID_PX = CELL * ROWS
+# two rows of buttons plus two lines of text
 HUD_PX  = 112
 WIDTH   = GRID_PX
 HEIGHT  = GRID_PX + HUD_PX
 
 INF = float("inf")
 
+# walls are just terrain with infinite cost, saves having a separate flag
 TERRAIN = {
     "open":  (1,   (25, 25, 28)),
     "grass": (2,   (38, 104, 58)),
@@ -71,6 +72,9 @@ BRUSH_SWATCH["end"]   = END_C
 
 
 def _layout_brushes(y, h):
+    """
+    Measure each label and lay the row out left to right.
+    """
     rects = {}
     for pad, gap in ((9, 5), (7, 4), (5, 3), (3, 2)):
         rects, x = {}, 8
@@ -99,11 +103,18 @@ ACTION_BUTTONS = {
 
 
 class Node:
+    """
+    One cell of the grid
+    """
+
     __slots__ = ("row", "col", "x", "y", "terrain", "cost",
                  "adjacent", "state", "dist", "prev", "finalised")
 
     def __init__(self, row, col):
         self.row, self.col = row, col
+        # note: row maps to x, col maps to y. Confusing, but it matches the
+        # order cell_at() returns and I'd rather keep them consistent than
+        # rename everything now
         self.x, self.y = row * CELL, col * CELL
         self.adjacent = []
         self.set_terrain("open")
@@ -115,6 +126,8 @@ class Node:
 
     @property
     def is_wall(self):
+        # was comparing colours for this originally, which broke the moment
+        # the search painted over a cell. Terrain name is the source of truth
         return self.terrain == "wall"
 
     def reset_search(self):
@@ -132,6 +145,8 @@ class Node:
                 self.adjacent.append(grid[nr][nc])
 
     def draw(self, win, start, end, current):
+        # terrain underneath, search state as a smaller square on top, so you
+        # can still see the mud/water the algorithm is trying to avoid
         pygame.draw.rect(win, TERRAIN[self.terrain][1],
                          (self.x, self.y, CELL, CELL))
 
@@ -168,6 +183,10 @@ def clear_search_state(grid):
 
 
 class Search:
+    """
+    Dijkstra implementation
+    """
+
     def __init__(self, grid, start, end):
         self.grid, self.start, self.end = grid, start, end
 
@@ -205,6 +224,9 @@ class Search:
         return True
 
     def _step_search(self):
+        # heapq has no decrease, so when a node's distance improves we
+        # push a second entry instead of editing the old one. The outdated
+        # entry is still in the heap, so throw away anything already closed.
         node = None
         while self.pq:
             _, _, cand = heapq.heappop(self.pq)
@@ -333,19 +355,20 @@ def draw_hud(win, brush, search, start, end):
 
     if search is None:
         if start is None:
-            stat = "pick start brush, tap/click grid cell"
+            stat = "pick the start brush, then click a cell"
         elif end is None:
-            stat = "pick end brush, tap/click grid cell"
+            stat = "pick the end brush, then click a cell"
         else:
             stat = "ready - press Start or SPACE"
-        note = "1-5 terrain   S/E start/end   SPACE step   C clear"
+        note = "keys: 1-5 terrain   S/E start,end   SPACE step   C clear"
     else:
-        stat = (f"step {search.step_no}  phase {search.phase}  "
-                f"queue {len(search.pq)}  cost {search.path_cost}")
+        stat = (f"step {search.step_no}   phase {search.phase}   "
+                f"queue {len(search.pq)}   finalised {search.expanded}   "
+                f"cost {search.path_cost}")
         note = search.note
 
     win.blit(FONT.render(stat, True, TEXT), (8, y0 + 72))
-    win.blit(FONT.render(note, True, DIM),  (8, y0 + 92))
+    win.blit(FONT.render(note, True, DIM),  (8, y0 + 90))
 
 
 def draw(win, grid, start, end, brush, search):
@@ -360,33 +383,11 @@ def draw(win, grid, start, end, brush, search):
     draw_hud(win, brush, search, start, end)
     pygame.display.update()
 
-
 def cell_at(pos):
     mx, my = pos
     if not (0 <= mx < GRID_PX and 0 <= my < GRID_PX):
         return None
     return mx // CELL, my // CELL
-
-
-def apply_brush_to_node(node, brush, start, end, is_erase=False):
-    if is_erase:
-        node.set_terrain("open")
-        new_start = None if node is start else start
-        new_end = None if node is end else end
-        return new_start, new_end
-
-    if brush == "start":
-        if node is not end:
-            node.set_terrain("open")
-            return node, end
-    elif brush == "end":
-        if node is not start:
-            node.set_terrain("open")
-            return start, node
-    elif node is not start and node is not end:
-        node.set_terrain(brush)
-
-    return start, end
 
 
 async def main():
@@ -395,83 +396,71 @@ async def main():
     search = None
     brush = "start" 
     run = True
-    
-    is_painting = False
-    paint_button = 1
-    last_painted_cell = None
 
     while run:
         CLOCK.tick(60)
         draw(WIN, grid, start, end, brush, search)
 
+        cell = cell_at(pygame.mouse.get_pos())
+        if cell:
+            left, _middle, right = pygame.mouse.get_pressed()
+            if left or right:
+                if search is not None:
+                    search = None
+                    clear_search_state(grid)
+
+                node = grid[cell[0]][cell[1]]
+                if right:
+                    node.set_terrain("open")
+                    if node is start:
+                        start = None
+                    if node is end:
+                        end = None
+                elif brush == "start":
+                    if node is not end:
+                        start = node
+                        node.set_terrain("open")
+                elif brush == "end":
+                    if node is not start:
+                        end = node
+                        node.set_terrain("open")
+                elif node is not start and node is not end:
+                    node.set_terrain(brush)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                is_painting = True
-                paint_button = event.button
-                pos = event.pos
-
-                # Check HUD buttons first
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 hit_brush = False
                 for name, rect in BRUSH_BUTTONS.items():
-                    if rect.collidepoint(pos):
+                    if rect.collidepoint(event.pos):
                         brush = name
                         hit_brush = True
-                        is_painting = False
                         break
 
                 if not hit_brush:
                     for key, (rect, _label, enabled) in button_specs(search, start, end).items():
-                        if enabled and rect.collidepoint(pos):
-                            is_painting = False
-                            if key == "step":
-                                search.step()
-                            elif key == "step10":
-                                for _ in range(10):
-                                    if not search.step():
-                                        break
-                            elif key == "run":
-                                if search is None:
-                                    search = Search(grid, start, end)
-                                else:
-                                    search = None
-                                    clear_search_state(grid)
-                            elif key == "clear":
-                                grid = make_grid()
-                                start = end = search = None
-                                brush = "start"
-                            break
+                        if not (enabled and rect.collidepoint(event.pos)):
+                            continue
 
-                # If on grid, paint the cell immediately
-                cell = cell_at(pos)
-                if cell and is_painting:
-                    if search is not None:
-                        search = None
-                        clear_search_state(grid)
-                    node = grid[cell[0]][cell[1]]
-                    start, end = apply_brush_to_node(
-                        node, brush, start, end, is_erase=(paint_button == 3)
-                    )
-                    last_painted_cell = cell
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                is_painting = False
-                last_painted_cell = None
-
-            elif event.type == pygame.MOUSEMOTION:
-                if is_painting:
-                    cell = cell_at(event.pos)
-                    if cell and cell != last_painted_cell:
-                        if search is not None:
-                            search = None
-                            clear_search_state(grid)
-                        node = grid[cell[0]][cell[1]]
-                        start, end = apply_brush_to_node(
-                            node, brush, start, end, is_erase=(paint_button == 3)
-                        )
-                        last_painted_cell = cell
+                        if key == "step":
+                            search.step()
+                        elif key == "step10":
+                            for _ in range(10):
+                                if not search.step():
+                                    break
+                        elif key == "run":
+                            if search is None:
+                                search = Search(grid, start, end)
+                            else:
+                                search = None
+                                clear_search_state(grid)
+                        elif key == "clear":
+                            grid = make_grid()
+                            start = end = search = None
+                            brush = "start"
+                        break 
 
             elif event.type == pygame.KEYDOWN:
                 if event.key in BRUSH_KEYS:
