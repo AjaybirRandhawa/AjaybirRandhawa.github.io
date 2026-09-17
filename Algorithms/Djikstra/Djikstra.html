@@ -84,14 +84,14 @@
             const status = document.getElementById("loading-status");
 
             try {
-                status.innerText = "⏳ Initializing Python Engine...";
+                status.innerText = "Initializing Python Engine...";
                 const pyodide = await loadPyodide();
 
-                status.innerText = "⏳ Loading micropip...";
+                status.innerText = "Loading micropip...";
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
 
-                status.innerText = "⏳ Downloading Pygame-CE (WebAssembly)...";
+                status.innerText = "Downloading Pygame-CE (WebAssembly)...";
                 await micropip.install("pygame-ce");
 
                 const canvas = document.getElementById("canvas");
@@ -99,7 +99,7 @@
                     pyodide.canvas.setCanvas2D(canvas);
                 }
 
-                status.innerText = "⏳ Loading Dijkstra script...";
+                status.innerText =  "Loading Dijkstra script...";
                 let pySource = "";
                 let response = await fetch("./Djikstra.py");
                 if (!response.ok) {
