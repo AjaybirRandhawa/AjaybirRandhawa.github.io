@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dijkstra Visualiser</title>
     <link rel="stylesheet" href="../../Styles/styles.css">
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
 
     <style>
@@ -70,7 +71,7 @@
     </div>
 
     <div class="visualiser-wrapper">
-        <div id="loading-status">⏳ Loading Python Engine & Pygame...</div>
+        <div id="loading-status">⏳ Initializing Python Engine...</div>
         <canvas id="canvas" width="600" height="712" tabindex="-1" oncontextmenu="return false;"></canvas>
     </div>
 
@@ -83,34 +84,39 @@
             const status = document.getElementById("loading-status");
 
             try {
-                status.innerText = "⏳ Initializing Pyodide...";
-                let pyodide = await loadPyodide();
+                status.innerText = "⏳ Initializing Python Engine...";
+                const pyodide = await loadPyodide();
 
-                status.innerText = "⏳ Loading Pygame-CE (WebAssembly)...";
-                await pyodide.loadPackage("pygame-ce");
+                status.innerText = "⏳ Loading micropip...";
+                await pyodide.loadPackage("micropip");
+                const micropip = pyodide.pyimport("micropip");
 
-                // Bind the canvas for Pygame rendering
+                status.innerText = "⏳ Downloading Pygame-CE (WebAssembly)...";
+                await micropip.install("pygame-ce");
+
                 const canvas = document.getElementById("canvas");
-                pyodide.canvas.setCanvas2D(canvas);
+                if (pyodide.canvas && pyodide.canvas.setCanvas2D) {
+                    pyodide.canvas.setCanvas2D(canvas);
+                }
 
                 status.innerText = "⏳ Loading Dijkstra script...";
-                
                 let pySource = "";
                 let response = await fetch("./Djikstra.py");
                 if (!response.ok) {
                     response = await fetch("./djikstra.py");
                 }
+                if (!response.ok) {
+                    throw new Error("Could not fetch Djikstra.py (HTTP " + response.status + ")");
+                }
                 pySource = await response.text();
 
                 status.style.display = "none";
-                
                 await pyodide.runPythonAsync(pySource);
             } catch (err) {
-                status.innerText = "Error loading: " + err.message;
+                status.innerText = "Error Message: " + err.message;
                 console.error(err);
             }
         }
-
         main();
     </script>
 </body>
