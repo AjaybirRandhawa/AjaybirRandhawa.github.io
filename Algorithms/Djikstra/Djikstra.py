@@ -4,13 +4,12 @@ from itertools import count
 
 import pygame
 
-CELL    = 20
-ROWS    = 30
-GRID_PX = CELL * ROWS
-# two rows of buttons plus two lines of text
-HUD_PX  = 112
-WIDTH   = GRID_PX
-HEIGHT  = GRID_PX + HUD_PX
+BASE_CELL = 20
+ROWS      = 30
+BASE_GRID_PX = BASE_CELL * ROWS
+BASE_HUD_PX  = 112
+BASE_WIDTH   = BASE_GRID_PX
+BASE_HEIGHT  = BASE_GRID_PX + BASE_HUD_PX
 
 INF = float("inf")
 
@@ -47,12 +46,31 @@ BTN_DIS  = (26, 26, 30)
 BTN_EDGE = (96, 96, 104)
 
 pygame.init()
+
+# Detect screen size to decide scaling
+info = pygame.display.Info()
+screen_w, screen_h = info.current_w, info.current_h
+
+if screen_w < BASE_WIDTH or screen_h < BASE_HEIGHT:
+    scale = min(screen_w / BASE_WIDTH, screen_h / BASE_HEIGHT)
+else:
+    scale = 1.0
+
+WIDTH   = int(BASE_WIDTH * scale)
+HEIGHT  = int(BASE_HEIGHT * scale)
+
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dijkstra Visualiser")
 CLOCK = pygame.time.Clock()
 
+BASE_SURF = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
+
+CELL    = BASE_CELL
+GRID_PX = BASE_GRID_PX
+HUD_PX  = BASE_HUD_PX
+
 FONT  = pygame.font.Font(None, 19)
-SMALL = pygame.font.Font(None, 17) 
+SMALL = pygame.font.Font(None, 17)
 
 BRUSH_Y, BRUSH_H = GRID_PX + 6,  24
 ACT_Y,   ACT_H   = GRID_PX + 36, 28
@@ -83,7 +101,7 @@ def _layout_brushes(y, h):
             w = pad + SWATCH + 5 + text_w + pad
             rects[name] = pygame.Rect(x, y, w, h)
             x += w + gap
-        if x <= WIDTH - 4:
+        if x <= BASE_WIDTH - 4:
             break
     return rects
 
@@ -342,10 +360,13 @@ def button_specs(search, start, end):
 
 def draw_hud(win, brush, search, start, end):
     y0 = GRID_PX
-    pygame.draw.rect(win, HUD_BG, (0, y0, WIDTH, HUD_PX))
-    pygame.draw.line(win, BTN_EDGE, (0, y0), (WIDTH, y0))
+    pygame.draw.rect(win, HUD_BG, (0, y0, BASE_WIDTH, HUD_PX))
+    pygame.draw.line(win, BTN_EDGE, (0, y0), (BASE_WIDTH, y0))
 
     mouse = pygame.mouse.get_pos()
+
+    if scale != 1.0:
+        mouse = (int(mouse[0] / scale), int(mouse[1] / scale))
 
     for name, rect in BRUSH_BUTTONS.items():
         draw_brush_button(win, name, rect, brush == name, mouse)
@@ -372,19 +393,29 @@ def draw_hud(win, brush, search, start, end):
 
 
 def draw(win, grid, start, end, brush, search):
-    win.fill((0, 0, 0))
+    BASE_SURF.fill((0, 0, 0))
 
     current = search.current if search else None
     for row in grid:
         for node in row:
-            node.draw(win, start, end, current)
+            node.draw(BASE_SURF, start, end, current)
 
-    draw_grid_lines(win)
-    draw_hud(win, brush, search, start, end)
+    draw_grid_lines(BASE_SURF)
+    draw_hud(BASE_SURF, brush, search, start, end)
+
+    if scale == 1.0:
+        win.blit(BASE_SURF, (0, 0))
+    else:
+        scaled = pygame.transform.smoothscale(BASE_SURF, (WIDTH, HEIGHT))
+        win.blit(scaled, (0, 0))
     pygame.display.update()
+
 
 def cell_at(pos):
     mx, my = pos
+    if scale != 1.0:
+        mx = int(mx / scale)
+        my = int(my / scale)
     if not (0 <= mx < GRID_PX and 0 <= my < GRID_PX):
         return None
     return mx // CELL, my // CELL
@@ -394,7 +425,7 @@ async def main():
     grid = make_grid()
     start = end = None
     search = None
-    brush = "start" 
+    brush = "start"
     run = True
 
     while run:
@@ -460,7 +491,7 @@ async def main():
                             grid = make_grid()
                             start = end = search = None
                             brush = "start"
-                        break 
+                        break
 
             elif event.type == pygame.KEYDOWN:
                 if event.key in BRUSH_KEYS:
