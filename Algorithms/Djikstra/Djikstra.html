@@ -79,44 +79,44 @@
     <div class="wave"></div>
 
     <script>
-        async function main() {
-            const status = document.getElementById("loading-status");
-            const canvas = document.getElementById("canvas");
+  async function main() {
+    const status = document.getElementById("loading-status");
+    const canvas = document.getElementById("canvas");
+    try {
+      status.innerText = "Initializing Python Engine...";
+      const pyodide = await loadPyodide();
+      
+      // Tell Pyodide to use your canvas element
+      pyodide.canvas.setCanvas2D(canvas);
 
-            try {
-                status.innerText = "Initializing Python Engine...";
-                const pyodide = await loadPyodide();
+      // FIX: Load pygame-ce directly from Pyodide's built-in package manager
+      status.innerText = "Loading Pygame-CE...";
+      await pyodide.loadPackage("pygame-ce");
 
-                pyodide.canvas.setCanvas2D(canvas);
-
-                status.innerText = "Loading Pygame-CE...";
-                await pyodide.loadPackage("micropip");
-                const micropip = pyodide.pyimport("micropip");
-                await micropip.install("pygame-ce");
-                status.innerText = "Loading Dijkstra script...";
-                let response = await fetch("./Djikstra.py");
-                if (!response.ok) {
-                    response = await fetch("./djikstra.py");
-                }
-                if (!response.ok) {
-                    throw new Error("Could not fetch Dijkstra python file.");
-                }
-                const pySource = await response.text();
-
-                status.style.display = "none";
-                canvas.focus();
-
-                await pyodide.runPythonAsync(`
-${pySource}
-await main()
-                `);
-            } catch (err) {
-                status.innerText = "Error Message: " + err.message;
-                console.error(err);
-            }
-        }
-
-        main();
+      status.innerText = "Loading Dijkstra script...";
+      let response = await fetch("./Djikstra.py");
+      if (!response.ok) {
+        response = await fetch("./djikstra.py");
+      }
+      if (!response.ok) {
+        throw new Error("Could not fetch Dijkstra python file.");
+      }
+      const pySource = await response.text();
+      
+      status.style.display = "none";
+      canvas.focus();
+      
+      await pyodide.runPythonAsync(`
+        ${pySource}
+        await main()
+      `);
+    } catch (err) {
+      status.innerText = "Error Message: " + err.message;
+      console.error(err);
+    }
+  }
+      main();
     </script>
+
 </body>
 </html>
