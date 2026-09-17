@@ -96,12 +96,14 @@
                 status.innerText = "⏳ Loading Dijkstra script...";
                 
                 let pySource = "";
-                let response = await fetch("./djikstra.py");
+                let response = await fetch("./Djikstra.py");
+                if (!response.ok) {
+                    response = await fetch("./djikstra.py");
+                }
                 pySource = await response.text();
 
-                status.style.display = "none"; // Hide loader once running
+                status.style.display = "none";
                 
-                // Run the async python code
                 await pyodide.runPythonAsync(pySource);
             } catch (err) {
                 status.innerText = "❌ Error loading: " + err.message;
