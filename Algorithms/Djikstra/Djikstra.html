@@ -6,6 +6,7 @@
     <title>Dijkstra Visualiser</title>
     <link rel="stylesheet" href="../../Styles/styles.css">
 
+    <!-- Pyodide 0.26.4 -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
 
     <style>
@@ -30,6 +31,7 @@
             text-align: center;
         }
 
+        /* Responsive Mobile Canvas with native hardware touch processing */
         #canvas {
             width: 100% !important;
             max-width: 600px !important;
@@ -40,7 +42,9 @@
             outline: none;
             background-color: #101012;
             display: block;
-            touch-action: none; 
+            touch-action: none; /* Prevents mobile scroll while painting */
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .container {
@@ -81,14 +85,16 @@
                 <h2>Instructions:</h2>
                 <ul>
                     <li>Tap / Click anywhere on the grid; choose brushes or buttons at the bottom.</li>
-                    <li>Drag to paint barriers/terrain; tap with 2 fingers (or right-click) to erase.</li>
+                    <li>Drag to paint terrain or walls; tap with the <b>open</b> brush (or right-click) to erase.</li>
                     <li>Tap <b>Start</b> or press <kbd>Space</kbd> to run; tap <b>Clear</b> to reset.</li>
                 </ul>
             </div>
         </div>
     </div>
+
+    <!-- Visualiser Canvas -->
     <div class="visualiser-wrapper">
-        <div id="loading-status">⏳ Initializing Python 3.12 Engine...</div>
+        <div id="loading-status">⏳ Initializing Python Engine...</div>
         <canvas id="canvas" width="600" height="712" tabindex="-1" oncontextmenu="event.preventDefault();"></canvas>
     </div>
 
@@ -97,62 +103,19 @@
     <div class="wave"></div>
 
     <script>
-        function enableTouchSupport(canvas) {
-            function forwardTouch(type, touch, button) {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const clientX = (touch.clientX - rect.left) * scaleX + rect.left;
-                const clientY = (touch.clientY - rect.top) * scaleY + rect.top;
-
-                const mouseEvt = new MouseEvent(type, {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                    clientX: clientX,
-                    clientY: clientY,
-                    button: button || 0,
-                    buttons: button === 2 ? 2 : 1
-                });
-                canvas.dispatchEvent(mouseEvt);
-            }
-
-            canvas.addEventListener("touchstart", (e) => {
-                if (e.touches.length > 0) {
-                    forwardTouch("mousedown", e.touches[0], e.touches.length > 1 ? 2 : 0);
-                }
-                e.preventDefault();
-            }, { passive: false });
-
-            canvas.addEventListener("touchmove", (e) => {
-                if (e.touches.length > 0) {
-                    forwardTouch("mousemove", e.touches[0], 0);
-                }
-                e.preventDefault();
-            }, { passive: false });
-
-            canvas.addEventListener("touchend", (e) => {
-                const touch = e.changedTouches[0] || e.touches[0];
-                if (touch) {
-                    forwardTouch("mouseup", touch, 0);
-                }
-                e.preventDefault();
-            }, { passive: false });
-        }
-
         async function main() {
             const status = document.getElementById("loading-status");
             const canvas = document.getElementById("canvas");
 
-            enableTouchSupport(canvas);
-
             try {
-                status.innerText = "Initializing Python Engine...";
+                // 1. Initialize Pyodide 0.26.4
+                status.innerText = "⏳ Initializing Python Engine...";
                 const pyodide = await loadPyodide();
 
+                // Bind canvas to SDL2
                 pyodide.canvas.setCanvas2D(canvas);
 
-                status.innerText = "Loading Pygame-CE (WebAssembly)...";
+                status.innerText = "⏳ Loading Pygame-CE...";
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
                 await micropip.install("pygame-ce");
@@ -163,7 +126,7 @@
                     response = await fetch("./djikstra.py");
                 }
                 if (!response.ok) {
-                    throw new Error("Could not find Djikstra.py file.");
+                    throw new Error("Could not find Dijkstra python script.");
                 }
                 const pySource = await response.text();
 
@@ -175,7 +138,7 @@ ${pySource}
 await main()
                 `);
             } catch (err) {
-                status.innerText = "Error Message: " + err.message;
+                status.innerText = "Error: " + err.message;
                 console.error(err);
             }
         }
