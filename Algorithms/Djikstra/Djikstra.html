@@ -34,73 +34,89 @@
     </style>
 </head>
 
-<body class="Djikstra-body" style="background-color: lightcyan"> 
-    <div class="container"> 
-        <div class="navbar-wrapper"> 
-            <div class="left-column"> 
-                <div class="nav-link-wrapper"> 
-                    <a href="../../index.html">Home</a> 
-                </div> <div class="nav-link-wrapper"> 
-                    <a href="../../about.html">About Me</a> 
-                </div> <div class="nav-link-wrapper"> <a href="../../projects.html">Projects</a> </div> </div> <div class="right-column"> <div class="name"> <div>Ajaybir Singh Randhawa</div><pre> </pre> <a href="https://github.com/AjaybirRandhawa"><img src="../../images/logos/GitHub-Mark-32px.png" height="20px" width="20px"></a> </div> </div> </div> </div>
-text
-
-<div class="container">
-    <div class="row">
-        <div class="instructions" style="color: rgb(149, 46, 153);">
-            <h2>Instructions:</h2>
-            <ul>
-                <li>Click using the mouse anywhere on the grid; select Start / End brushes or use buttons at the bottom.</li>
-                <li>Place barriers by dragging the mouse across the screen; to remove blocks, <b>right click</b> on them.</li>
-                <li>Press <kbd>Space</kbd> or click <b>Start</b> to begin, and press <kbd>C</kbd> or click <b>Clear</b> to reset.</li>
-            </ul>
+<body class="Djikstra-body" style="background-color: lightcyan">
+    <div class="container">
+        <div class="navbar-wrapper">
+            <div class="left-column">
+                <div class="nav-link-wrapper">
+                    <a href="../../index.html">Home</a>
+                </div>
+                <div class="nav-link-wrapper">
+                    <a href="../../about.html">About Me</a>
+                </div>
+                <div class="nav-link-wrapper">
+                    <a href="../../projects.html">Projects</a>
+                </div>
+            </div>
+            <div class="right-column">
+                <div class="name">
+                    <div>Ajaybir Singh Randhawa</div><pre>   </pre>
+                    <a href="https://github.com/AjaybirRandhawa"><img src="../../images/logos/GitHub-Mark-32px.png" height="20px" width="20px"></a>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="visualiser-wrapper">
-    <div id="loading-status">⏳ Loading Python Engine & Pygame...</div>
-    <canvas id="canvas" width="600" height="712" tabindex="-1" oncontextmenu="return false;"></canvas>
-</div>
+    <div class="container">
+        <div class="row">
+            <div class="instructions" style="color: rgb(149, 46, 153);">
+                <h2>Instructions:</h2>
+                <ul>
+                    <li>Click using the mouse anywhere on the grid; select Start / End brushes or use buttons at the bottom.</li>
+                    <li>Place barriers by dragging the mouse across the screen; to remove blocks, <b>right click</b> on them.</li>
+                    <li>Press <kbd>Space</kbd> or click <b>Start</b> to begin, and press <kbd>C</kbd> or click <b>Clear</b> to reset.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="visualiser-wrapper">
+        <div id="loading-status">⏳ Initializing Python Engine...</div>
+        <canvas id="canvas" width="600" height="712" tabindex="-1" oncontextmenu="event.preventDefault();"></canvas>
+    </div>
 
-<div class="wave wave1"></div>
-<div class="wave wave2"></div>
-<div class="wave"></div>
+    <div class="wave wave1"></div>
+    <div class="wave wave2"></div>
+    <div class="wave"></div>
 
-<script>
-    async function main() {
-        const status = document.getElementById("loading-status");
-
-        try {
-            status.innerText = "⏳ Initializing Pyodide...";
-            let pyodide = await loadPyodide();
-
-            status.innerText = "⏳ Loading Pygame-CE (WebAssembly)...";
-            await pyodide.loadPackage("pygame-ce");
-
-            // Bind the canvas for Pygame rendering
+    <script>
+        async function main() {
+            const status = document.getElementById("loading-status");
             const canvas = document.getElementById("canvas");
-            pyodide.canvas.setCanvas2D(canvas);
 
-            status.innerText = "⏳ Loading Dijkstra script...";
-            
-            let pySource = "";
-            let response = await fetch("./Djikstra.py");
-            if (!response.ok) {
-                response = await fetch("./djikstra.py");
+            try {
+                status.innerText = "Initializing Python Engine...";
+                const pyodide = await loadPyodide();
+
+                pyodide.canvas.setCanvas2D(canvas);
+
+                status.innerText = "Loading Pygame-CE...";
+                await pyodide.loadPackage("micropip");
+                const micropip = pyodide.pyimport("micropip");
+                await micropip.install("pygame-ce");
+                status.innerText = "Loading Dijkstra script...";
+                let response = await fetch("./Djikstra.py");
+                if (!response.ok) {
+                    response = await fetch("./djikstra.py");
+                }
+                if (!response.ok) {
+                    throw new Error("Could not fetch Dijkstra python file.");
+                }
+                const pySource = await response.text();
+
+                status.style.display = "none";
+                canvas.focus();
+
+                await pyodide.runPythonAsync(`
+${pySource}
+await main()
+                `);
+            } catch (err) {
+                status.innerText = "Error Message: " + err.message;
+                console.error(err);
             }
-            pySource = await response.text();
-
-            status.style.display = "none";
-            
-            await pyodide.runPythonAsync(pySource);
-        } catch (err) {
-            status.innerText = "❌ Error loading: " + err.message;
-            console.error(err);
         }
-    }
 
-    main();
-</script>
+        main();
+    </script>
 </body>
 </html>
