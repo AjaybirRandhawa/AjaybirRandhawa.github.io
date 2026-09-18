@@ -4,17 +4,15 @@ from itertools import count
 
 import pygame
 
-CELL    = 20
+CELL    = 16
 ROWS    = 30
 GRID_PX = CELL * ROWS
-# two rows of buttons plus two lines of text
 HUD_PX  = 112
 WIDTH   = GRID_PX
 HEIGHT  = GRID_PX + HUD_PX
 
 INF = float("inf")
 
-# walls are just terrain with infinite cost, saves having a separate flag
 TERRAIN = {
     "open":  (1,   (25, 25, 28)),
     "grass": (2,   (38, 104, 58)),
@@ -72,49 +70,51 @@ BRUSH_SWATCH["end"]   = END_C
 
 
 def _layout_brushes(y, h):
-    """
-    Measure each label and lay the row out left to right.
-    """
-    rects = {}
     for pad, gap in ((9, 5), (7, 4), (5, 3), (3, 2)):
-        rects, x = {}, 8
+        widths = []
         for name in BRUSH_ORDER:
             text_w = SMALL.size(BRUSH_LABELS[name])[0]
             w = pad + SWATCH + 5 + text_w + pad
-            rects[name] = pygame.Rect(x, y, w, h)
-            x += w + gap
-        if x <= WIDTH - 4:
-            break
+            widths.append(w)
+        total = sum(widths) + gap * (len(widths) - 1)
+        if total <= WIDTH - 8:
+            rects = {}
+            x = (WIDTH - total) // 2
+            for name, w in zip(BRUSH_ORDER, widths):
+                rects[name] = pygame.Rect(x, y, w, h)
+                x += w + gap
+            return rects
+    rects = {}
+    x = 4
+    for name, w in zip(BRUSH_ORDER, widths):
+        rects[name] = pygame.Rect(x, y, w, h)
+        x += w + 2
+    return rects
+
+
+def _layout_actions(y, h, gap=6):
+    """Center the 4 action buttons as a group"""
+    keys = ["step", "step10", "run", "clear"]
+    widths = [92, 96, 108, 92]
+    total = sum(widths) + gap * (len(widths) - 1)
+    x = (WIDTH - total) // 2
+    rects = {}
+    for k, w in zip(keys, widths):
+        rects[k] = pygame.Rect(x, y, w, h)
+        x += w + gap
     return rects
 
 
 BRUSH_BUTTONS = _layout_brushes(BRUSH_Y, BRUSH_H)
-
-
-def _act(x, w):
-    return pygame.Rect(x, ACT_Y, w, ACT_H)
-
-ACTION_BUTTONS = {
-    "step":   _act(8,    92),
-    "step10": _act(106,  96),
-    "run":    _act(208, 108),
-    "clear":  _act(324,  92),
-}
+ACTION_BUTTONS = _layout_actions(ACT_Y, ACT_H)
 
 
 class Node:
-    """
-    One cell of the grid
-    """
-
     __slots__ = ("row", "col", "x", "y", "terrain", "cost",
                  "adjacent", "state", "dist", "prev", "finalised")
 
     def __init__(self, row, col):
         self.row, self.col = row, col
-        # note: row maps to x, col maps to y. Confusing, but it matches the
-        # order cell_at() returns and I'd rather keep them consistent than
-        # rename everything now
         self.x, self.y = row * CELL, col * CELL
         self.adjacent = []
         self.set_terrain("open")
@@ -126,8 +126,6 @@ class Node:
 
     @property
     def is_wall(self):
-        # was comparing colours for this originally, which broke the moment
-        # the search painted over a cell. Terrain name is the source of truth
         return self.terrain == "wall"
 
     def reset_search(self):
@@ -145,11 +143,8 @@ class Node:
                 self.adjacent.append(grid[nr][nc])
 
     def draw(self, win, start, end, current):
-        # terrain underneath, search state as a smaller square on top, so you
-        # can still see the mud/water the algorithm is trying to avoid
         pygame.draw.rect(win, TERRAIN[self.terrain][1],
                          (self.x, self.y, CELL, CELL))
-
         overlay = None
         if self is start:
             overlay = START_C
@@ -167,7 +162,6 @@ class Node:
             pygame.draw.rect(win, overlay,
                              (self.x + pad, self.y + pad,
                               CELL - 2 * pad, CELL - 2 * pad))
-
         if self is current:
             pygame.draw.rect(win, CURRENT, (self.x, self.y, CELL, CELL), 2)
 
@@ -175,30 +169,21 @@ class Node:
 def make_grid():
     return [[Node(r, c) for c in range(ROWS)] for r in range(ROWS)]
 
-
 def clear_search_state(grid):
     for row in grid:
         for node in row:
             node.reset_search()
 
-
 class Search:
-    """
-    Dijkstra implementation
-    """
-
     def __init__(self, grid, start, end):
         self.grid, self.start, self.end = grid, start, end
-
         for row in grid:
             for node in row:
                 node.reset_search()
                 node.update_adjacent(grid)
-
         self.tiebreak = count()
         start.dist = 0
         self.pq = [(0, next(self.tiebreak), start)]
-
         self.phase = "search"
         self.expanded = 0
         self.path_cost = "-"
@@ -214,38 +199,30 @@ class Search:
     def step(self):
         if self.phase == "done":
             return False
-
         if self.phase == "search":
             self._step_search()
         else:
             self._step_path()
-
         self.step_no += 1
         return True
 
     def _step_search(self):
-        # heapq has no decrease, so when a node's distance improves we
-        # push a second entry instead of editing the old one. The outdated
-        # entry is still in the heap, so throw away anything already closed.
         node = None
         while self.pq:
             _, _, cand = heapq.heappop(self.pq)
             if not cand.finalised:
                 node = cand
                 break
-
         if node is None:
             self.phase = "done"
             self.current = None
             self.path_cost = "no path"
             self.note = "queue empty - target unreachable"
             return
-
         node.finalised = True
         node.state = "closed"
         self.current = node
         self.expanded += 1
-
         if node is self.end:
             self.path_cost = node.dist
             chain, p = [], node.prev
@@ -257,7 +234,6 @@ class Search:
             self.phase = "path"
             self.note = "target finalised - tracing path"
             return
-
         relaxed = 0
         for nb in node.adjacent:
             if nb.finalised:
@@ -269,7 +245,6 @@ class Search:
                 nb.state = "frontier"
                 heapq.heappush(self.pq, (alt, next(self.tiebreak), nb))
                 relaxed += 1
-
         self.note = (f"pop ({node.row},{node.col}) d={node.dist}"
                      f"  relaxed {relaxed}")
 
@@ -279,13 +254,11 @@ class Search:
             self.current = None
             self.note = f"done - shortest path cost {self.path_cost}"
             return
-
         n = self.path_nodes[self.path_i]
         n.state = "path"
         self.current = n
         self.path_i += 1
         self.note = "tracing path back through prev pointers"
-
 
 def draw_grid_lines(win):
     for i in range(ROWS + 1):
@@ -293,25 +266,16 @@ def draw_grid_lines(win):
         pygame.draw.line(win, GREY, (0, p), (GRID_PX, p))
         pygame.draw.line(win, GREY, (p, 0), (p, GRID_PX))
 
-
 def draw_brush_button(win, name, rect, selected, mouse):
-    if selected or rect.collidepoint(mouse):
-        bg = BTN_HOV
-    else:
-        bg = BTN_BG
-
+    bg = BTN_HOV if selected or rect.collidepoint(mouse) else BTN_BG
     pygame.draw.rect(win, bg, rect)
-    pygame.draw.rect(win, CURRENT if selected else BTN_EDGE,
-                     rect, 2 if selected else 1)
-
+    pygame.draw.rect(win, CURRENT if selected else BTN_EDGE, rect, 2 if selected else 1)
     swatch = pygame.Rect(0, 0, SWATCH, SWATCH)
     swatch.midleft = (rect.x + 7, rect.centery)
     pygame.draw.rect(win, BRUSH_SWATCH[name], swatch)
     pygame.draw.rect(win, BTN_EDGE, swatch, 1)
-
     surf = SMALL.render(BRUSH_LABELS[name], True, TEXT)
     win.blit(surf, surf.get_rect(midleft=(swatch.right + 5, rect.centery)))
-
 
 def draw_button(win, rect, label, enabled, mouse):
     if not enabled:
@@ -320,13 +284,10 @@ def draw_button(win, rect, label, enabled, mouse):
         bg = BTN_HOV
     else:
         bg = BTN_BG
-
     pygame.draw.rect(win, bg, rect)
     pygame.draw.rect(win, BTN_EDGE, rect, 1)
-
     surf = FONT.render(label, True, TEXT if enabled else DIM)
     win.blit(surf, surf.get_rect(center=rect.center))
-
 
 def button_specs(search, start, end):
     has = search is not None
@@ -339,12 +300,10 @@ def button_specs(search, start, end):
         "clear":  (ACTION_BUTTONS["clear"],  "Clear",    True),
     }
 
-
 def draw_hud(win, brush, search, start, end):
     y0 = GRID_PX
     pygame.draw.rect(win, HUD_BG, (0, y0, WIDTH, HUD_PX))
     pygame.draw.line(win, BTN_EDGE, (0, y0), (WIDTH, y0))
-
     mouse = pygame.mouse.get_pos()
 
     for name, rect in BRUSH_BUTTONS.items():
@@ -367,18 +326,17 @@ def draw_hud(win, brush, search, start, end):
                 f"cost {search.path_cost}")
         note = search.note
 
-    win.blit(FONT.render(stat, True, TEXT), (8, y0 + 72))
-    win.blit(FONT.render(note, True, DIM),  (8, y0 + 90))
-
+    stat_surf = FONT.render(stat, True, TEXT)
+    note_surf = FONT.render(note, True, DIM)
+    win.blit(stat_surf, stat_surf.get_rect(centerx=WIDTH//2, y=y0 + 72))
+    win.blit(note_surf, note_surf.get_rect(centerx=WIDTH//2, y=y0 + 90))
 
 def draw(win, grid, start, end, brush, search):
     win.fill((0, 0, 0))
-
     current = search.current if search else None
     for row in grid:
         for node in row:
             node.draw(win, start, end, current)
-
     draw_grid_lines(win)
     draw_hud(win, brush, search, start, end)
     pygame.display.update()
@@ -389,18 +347,15 @@ def cell_at(pos):
         return None
     return mx // CELL, my // CELL
 
-
 async def main():
     grid = make_grid()
     start = end = None
     search = None
     brush = "start" 
     run = True
-
     while run:
         CLOCK.tick(60)
         draw(WIN, grid, start, end, brush, search)
-
         cell = cell_at(pygame.mouse.get_pos())
         if cell:
             left, _middle, right = pygame.mouse.get_pressed()
@@ -408,7 +363,6 @@ async def main():
                 if search is not None:
                     search = None
                     clear_search_state(grid)
-
                 node = grid[cell[0]][cell[1]]
                 if right:
                     node.set_terrain("open")
@@ -426,11 +380,9 @@ async def main():
                         node.set_terrain("open")
                 elif node is not start and node is not end:
                     node.set_terrain(brush)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 hit_brush = False
                 for name, rect in BRUSH_BUTTONS.items():
@@ -438,12 +390,10 @@ async def main():
                         brush = name
                         hit_brush = True
                         break
-
                 if not hit_brush:
                     for key, (rect, _label, enabled) in button_specs(search, start, end).items():
                         if not (enabled and rect.collidepoint(event.pos)):
                             continue
-
                         if key == "step":
                             search.step()
                         elif key == "step10":
@@ -461,7 +411,6 @@ async def main():
                             start = end = search = None
                             brush = "start"
                         break 
-
             elif event.type == pygame.KEYDOWN:
                 if event.key in BRUSH_KEYS:
                     brush = BRUSH_KEYS[event.key]
@@ -479,9 +428,7 @@ async def main():
                             search = Search(grid, start, end)
                     else:
                         search.step()
-
         await asyncio.sleep(0)
-
     pygame.quit()
 
 if __name__ == "__main__":
